@@ -16,9 +16,11 @@ import {
 import { BloombergButton } from "../core/bloomberg-button";
 import { useMarketDataQuery } from "../hooks";
 import { bloombergColors } from "../lib/theme-config";
+import { type Language, translations } from "../lib/translations";
 
 type TerminalHeaderProps = {
   isDarkMode: boolean;
+  language: Language;
   onCancelClick: () => void;
   onNewClick: () => void;
   onBlancClick: () => void;
@@ -28,10 +30,12 @@ type TerminalHeaderProps = {
   onRmiClick: () => void;
   onHelpClick: () => void;
   onThemeToggle: () => void;
+  onLanguageToggle: () => void;
 };
 
 export function TerminalHeader({
   isDarkMode,
+  language,
   onCancelClick,
   onNewClick,
   onBlancClick,
@@ -41,6 +45,7 @@ export function TerminalHeader({
   onRmiClick,
   onHelpClick,
   onThemeToggle,
+  onLanguageToggle,
 }: TerminalHeaderProps) {
   const {
     isLoading,
@@ -53,6 +58,7 @@ export function TerminalHeader({
   } = useMarketDataQuery();
 
   const colors = isDarkMode ? bloombergColors.dark : bloombergColors.light;
+  const t = translations[language];
 
   // Calculate how fresh the data is
   const getDataFreshnessIndicator = () => {
@@ -76,9 +82,11 @@ export function TerminalHeader({
     }
 
     return (
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1" suppressHydrationWarning>
         <div className={`h-2 w-2 rounded-full ${color} ${pulseClass}`} />
-        <span className="text-xs">{diffSeconds}s</span>
+        <span className="text-xs" suppressHydrationWarning>
+          {diffSeconds}s
+        </span>
       </div>
     );
   };
@@ -86,52 +94,56 @@ export function TerminalHeader({
   return (
     <div className={`flex flex-wrap gap-1 bg-[${colors.surface}] px-2 py-1`}>
       <BloombergButton color="red" onClick={onCancelClick}>
-        CANCL
+        {t.cancl}
       </BloombergButton>
       <BloombergButton color="green" onClick={onNewClick}>
-        NEW
+        {t.new}
       </BloombergButton>
       <BloombergButton color="green" onClick={onBlancClick}>
-        BLANC
+        {t.blanc}
       </BloombergButton>
       <BloombergButton color="green" onClick={onNewsClick}>
         <Newspaper className="h-3 w-3 mr-1" />
-        NEWS
+        {t.news}
       </BloombergButton>
       <BloombergButton color="green" onClick={onMoversClick}>
         <TrendingUp className="h-3 w-3 mr-1" />
-        GMOV
+        {t.gmov}
       </BloombergButton>
       <BloombergButton color="green" onClick={onVolatilityClick}>
         <BarChart2 className="h-3 w-3 mr-1" />
-        GVOL
+        {t.gvol}
       </BloombergButton>
       <BloombergButton color="green" onClick={onRmiClick}>
         <Activity className="h-3 w-3 mr-1" />
-        RMI
+        {t.rmi}
       </BloombergButton>
 
       <BloombergButton color="accent" onClick={onHelpClick}>
         <HelpCircle className="h-3 w-3 mr-1" />
-        HELP
+        {t.help}
       </BloombergButton>
 
       <BloombergButton color="accent" onClick={onThemeToggle}>
         {isDarkMode ? <Sun className="h-3 w-3 mr-1" /> : <Moon className="h-3 w-3 mr-1" />}
-        {isDarkMode ? "LIGHT" : "DARK"}
+        {isDarkMode ? t.light : t.dark}
+      </BloombergButton>
+
+      <BloombergButton color="accent" onClick={onLanguageToggle}>
+        {language === "en" ? "TH" : "EN"}
       </BloombergButton>
 
       {/* Redis Control Buttons */}
       <div className="ml-auto flex items-center gap-2">
         <BloombergButton color="accent" onClick={refreshData} disabled={isLoading}>
-          REFR
+          {t.refr}
         </BloombergButton>
         <BloombergButton
           color={isRealTimeEnabled ? "red" : "green"}
           onClick={toggleRealTimeUpdates}
           disabled={isLoading}
         >
-          {isRealTimeEnabled ? "STOP" : "LIVE"}
+          {isRealTimeEnabled ? t.stop : t.live}
         </BloombergButton>
 
         {/* Data Status */}
@@ -149,7 +161,11 @@ export function TerminalHeader({
             {dataSource === "alpha-vantage" ? "API" : isFromRedis ? "Redis" : "Local"}
           </span>
           {getDataFreshnessIndicator()}
-          {lastUpdated && <span className="text-gray-400">{lastUpdated.toLocaleTimeString()}</span>}
+          {lastUpdated && (
+            <span className="text-gray-400" suppressHydrationWarning>
+              {lastUpdated.toLocaleTimeString()}
+            </span>
+          )}
         </div>
       </div>
     </div>

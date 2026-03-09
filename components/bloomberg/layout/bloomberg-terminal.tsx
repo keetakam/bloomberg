@@ -1,9 +1,8 @@
 "use client";
 
 import { useAtom } from "jotai";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import {
-  activeWatchlistAtom,
   addWatchlistAtom,
   closeConfirmModalAtom,
   confirmAndCloseModalAtom,
@@ -13,7 +12,7 @@ import {
   openConfirmModalAtom,
   watchlistsAtom,
 } from "../atoms/terminal-ui";
-import { defaultFilters, resetFiltersAtom, writableFiltersAtom } from "../atoms/terminal-ui";
+import { resetFiltersAtom } from "../atoms/terminal-ui";
 import { ConfirmationModal } from "../core/confirmation-modal";
 import { ShortcutsHelp } from "../core/keyboard-shortcuts";
 import { Watchlist } from "../core/watchlist";
@@ -22,7 +21,6 @@ import { useMarketDataQuery } from "../hooks";
 import { TerminalFilterBar } from "../layout/terminal-filter-bar";
 import { TerminalHeader } from "../layout/terminal-header";
 import { TerminalLayout } from "../layout/terminal-layout";
-import type { FilterState, MarketItem } from "../types";
 import MarketMoversView from "../views/market-movers-view";
 import { MarketView } from "../views/market-view";
 import NewsView from "../views/news-view";
@@ -33,31 +31,26 @@ export default function BloombergTerminal() {
   // Use our custom hooks for state management
   const {
     isDarkMode,
-    error,
-    setError,
     currentView,
     setCurrentView,
     isShortcutsHelpOpen,
     setIsShortcutsHelpOpen,
     handleThemeToggle,
+    handleLanguageToggle,
+    language,
     handleMarketView,
     handleNewsView,
     handleMoversView,
     handleVolatilityView,
     handleRmiView,
-    handleCancelClick,
-    handleNewClick,
-    handleBlancClick,
     handleHelpClick,
   } = useTerminalUI();
 
   // Use Jotai atoms for state management
-  const [isConfirmModalOpen, setIsConfirmModalOpen] = useAtom(isConfirmModalOpenAtom);
-  const [confirmModalProps, setConfirmModalProps] = useAtom(confirmModalPropsAtom);
+  const [isConfirmModalOpen] = useAtom(isConfirmModalOpenAtom);
+  const [confirmModalProps] = useAtom(confirmModalPropsAtom);
   const [isWatchlistOpen, setIsWatchlistOpen] = useAtom(isWatchlistOpenAtom);
-  const [watchlists, setWatchlists] = useAtom(watchlistsAtom);
-  const [activeWatchlist, setActiveWatchlist] = useAtom(activeWatchlistAtom);
-  const [filters, setFilters] = useAtom(writableFiltersAtom);
+  const [watchlists] = useAtom(watchlistsAtom);
   const [, resetFilters] = useAtom(resetFiltersAtom);
 
   // Action atoms
@@ -70,7 +63,7 @@ export default function BloombergTerminal() {
   const { marketData: data, refreshData, toggleRealTimeUpdates, isLoading } = useMarketDataQuery();
 
   // Get all market indices for watchlist
-  const allMarketIndices = useCallback(() => {
+  const allMarketIndices = useMemo(() => {
     const indices: string[] = [];
     if (data?.americas) {
       for (const item of data.americas) {
@@ -91,39 +84,37 @@ export default function BloombergTerminal() {
   }, [data]);
 
   // Handle CANCL button with confirmation modal
-  const handleCancelWithConfirm = () => {
+  const handleCancelWithConfirm = useCallback(() => {
     openConfirmModal({
       title: "Confirm Action",
       message: "Are you sure you want to cancel the current operation?",
       onConfirm: () => {
-        // Reset any pending changes or operations
         console.log("Operation cancelled");
       },
     });
-  };
+  }, [openConfirmModal]);
 
   // Handle NEW button for watchlist
-  const handleNewWatchlist = () => {
+  const handleNewWatchlist = useCallback(() => {
     setIsWatchlistOpen(true);
-  };
+  }, [setIsWatchlistOpen]);
 
   // Handle BLANC button with confirmation modal
-  const handleBlancWithConfirm = () => {
+  const handleBlancWithConfirm = useCallback(() => {
     openConfirmModal({
       title: "Clear All Filters",
       message: "Are you sure you want to reset all filters to default?",
       onConfirm: () => {
-        // Reset filters to default using the resetFiltersAtom
         resetFilters();
         console.log("Filters reset to default");
       },
     });
-  };
+  }, [openConfirmModal, resetFilters]);
 
   // Handle back from specialized views
-  const handleBackFromView = () => {
+  const handleBackFromView = useCallback(() => {
     setCurrentView("market");
-  };
+  }, [setCurrentView]);
 
   // Handle watchlist save
   const handleWatchlistSave = (watchlist: { name: string; indices: string[] }) => {
@@ -131,68 +122,82 @@ export default function BloombergTerminal() {
   };
 
   // Define keyboard shortcuts
-  const shortcuts = [
-    {
-      key: "n",
-      ctrlKey: true,
-      action: handleNewWatchlist,
-      description: "Create new watchlist",
-    },
-    {
-      key: "b",
-      ctrlKey: true,
-      action: handleBlancWithConfirm,
-      description: "Reset all filters",
-    },
-    {
-      key: "Escape",
-      action: handleCancelWithConfirm,
-      description: "Cancel current operation",
-    },
-    {
-      key: "r",
-      ctrlKey: true,
-      action: refreshData,
-      description: "Refresh data",
-    },
-    {
-      key: "l",
-      ctrlKey: true,
-      action: toggleRealTimeUpdates,
-      description: "Toggle live updates",
-    },
-    {
-      key: "1",
-      action: handleMarketView,
-      description: "Show market view",
-    },
-    {
-      key: "2",
-      action: handleNewsView,
-      description: "Show news view",
-    },
-    {
-      key: "3",
-      action: handleMoversView,
-      description: "Show market movers",
-    },
-    {
-      key: "4",
-      action: handleVolatilityView,
-      description: "Show volatility view",
-    },
-    {
-      key: "?",
-      action: handleHelpClick,
-      description: "Show keyboard shortcuts",
-    },
-  ];
+  const shortcuts = useMemo(
+    () => [
+      {
+        key: "n",
+        ctrlKey: true,
+        action: handleNewWatchlist,
+        description: "Create new watchlist",
+      },
+      {
+        key: "b",
+        ctrlKey: true,
+        action: handleBlancWithConfirm,
+        description: "Reset all filters",
+      },
+      {
+        key: "Escape",
+        action: handleCancelWithConfirm,
+        description: "Cancel current operation",
+      },
+      {
+        key: "r",
+        ctrlKey: true,
+        action: refreshData,
+        description: "Refresh data",
+      },
+      {
+        key: "l",
+        ctrlKey: true,
+        action: toggleRealTimeUpdates,
+        description: "Toggle live updates",
+      },
+      {
+        key: "1",
+        action: handleMarketView,
+        description: "Show market view",
+      },
+      {
+        key: "2",
+        action: handleNewsView,
+        description: "Show news view",
+      },
+      {
+        key: "3",
+        action: handleMoversView,
+        description: "Show market movers",
+      },
+      {
+        key: "4",
+        action: handleVolatilityView,
+        description: "Show volatility view",
+      },
+      {
+        key: "?",
+        action: handleHelpClick,
+        description: "Show keyboard shortcuts",
+      },
+    ],
+    [
+      handleNewWatchlist,
+      handleBlancWithConfirm,
+      handleCancelWithConfirm,
+      refreshData,
+      toggleRealTimeUpdates,
+      handleMarketView,
+      handleNewsView,
+      handleMoversView,
+      handleVolatilityView,
+      handleHelpClick,
+    ]
+  );
 
   // Render the appropriate view based on currentView state
   if (currentView === "news") {
     return (
       <TerminalLayout shortcuts={shortcuts}>
-        <NewsView isDarkMode={isDarkMode} onBack={handleBackFromView} />
+        <NewsView isDarkMode={isDarkMode} onBack={handleBackFromView} language={language} />
       </TerminalLayout>
     );
   }
@@ -231,7 +236,7 @@ export default function BloombergTerminal() {
   if (currentView === "rmi") {
     return (
       <TerminalLayout shortcuts={shortcuts}>
-        <RmiView />
+        <RmiView language={language} />
       </TerminalLayout>
     );
   }
@@ -240,6 +245,7 @@ export default function BloombergTerminal() {
     <TerminalLayout shortcuts={shortcuts}>
       <TerminalHeader
         isDarkMode={isDarkMode}
+        language={language}
         onCancelClick={handleCancelWithConfirm}
         onNewClick={handleNewWatchlist}
         onBlancClick={handleBlancWithConfirm}
@@ -249,9 +255,10 @@ export default function BloombergTerminal() {
         onRmiClick={handleRmiView}
         onHelpClick={handleHelpClick}
         onThemeToggle={handleThemeToggle}
+        onLanguageToggle={handleLanguageToggle}
       />
 
-      <TerminalFilterBar isDarkMode={isDarkMode} watchlists={watchlists} />
+      <TerminalFilterBar isDarkMode={isDarkMode} language={language} watchlists={watchlists} />
 
       <MarketView isDarkMode={isDarkMode} />
 
@@ -269,7 +276,7 @@ export default function BloombergTerminal() {
         isOpen={isWatchlistOpen}
         onClose={() => setIsWatchlistOpen(false)}
         isDarkMode={isDarkMode}
-        marketIndices={allMarketIndices()}
+        marketIndices={allMarketIndices}
         onSave={handleWatchlistSave}
       />
 

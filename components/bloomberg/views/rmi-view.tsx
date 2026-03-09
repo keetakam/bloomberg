@@ -11,23 +11,23 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAtom } from "jotai";
 import { ArrowLeft } from "lucide-react";
-import { useEffect } from "react";
+import { memo, useEffect } from "react";
 import {
   currentViewAtom,
   isDarkModeAtom,
   rmiBenchmarkIndexAtom,
   rmiSelectedRegionAtom,
   rmiSelectedSecurityAtom,
-  rmiTimeRangeAtom,
 } from "../atoms";
 import { BloombergButton } from "../core/bloomberg-button";
 import { useMarketDataQuery } from "../hooks/useMarketDataQuery";
 import { bloombergColors } from "../lib/theme-config";
+import type { Language } from "../lib/translations";
 import type { MarketItem } from "../types";
 import { AiMarketAnalysis } from "../ui/ai-market-analysis";
 import { RmiChart } from "../ui/rmi-chart";
 
-export function RmiView() {
+function RmiViewInner({ language = "th" }: { language?: Language }) {
   // Global state
   const [isDarkMode] = useAtom(isDarkModeAtom);
   const [, setCurrentView] = useAtom(currentViewAtom);
@@ -38,7 +38,6 @@ export function RmiView() {
   const [selectedRegion, setSelectedRegion] = useAtom(rmiSelectedRegionAtom);
   const [selectedSecurity, setSelectedSecurity] = useAtom(rmiSelectedSecurityAtom);
   const [benchmarkIndex, setBenchmarkIndex] = useAtom(rmiBenchmarkIndexAtom);
-  const [timeRange, setTimeRange] = useAtom(rmiTimeRangeAtom);
 
   // Get all available securities for the selected region
   const securities: MarketItem[] = marketData[selectedRegion] || [];
@@ -47,9 +46,7 @@ export function RmiView() {
     const availableBenchmarks = securities.filter((item) => item.id !== selectedSecurity);
 
     if (availableBenchmarks.length === 0) {
-      // No valid benchmarks to select (e.g., only one security in total)
       if (benchmarkIndex !== undefined) {
-        // only update if it needs to be cleared
         setBenchmarkIndex(undefined);
       }
       return;
@@ -58,25 +55,19 @@ export function RmiView() {
     const currentBenchmarkIsValid = availableBenchmarks.some((item) => item.id === benchmarkIndex);
 
     if (!currentBenchmarkIsValid) {
-      // Current benchmark is not valid (either undefined or same as selectedSecurity)
-      // Try to set SPX:IND if it's available
       const spxBenchmark = availableBenchmarks.find((item) => item.id === "SPX:IND");
       if (spxBenchmark) {
         setBenchmarkIndex(spxBenchmark.id);
       } else {
-        // Otherwise, set the first available benchmark
         setBenchmarkIndex(availableBenchmarks[0].id);
       }
     }
-    // If currentBenchmarkIsValid is true, benchmarkIndex is already fine.
   }, [selectedSecurity, securities, benchmarkIndex, setBenchmarkIndex]);
 
-  // Handle back button click
   const handleBack = () => {
     setCurrentView("market");
   };
 
-  // Handle loading state
   if (isLoading) {
     return (
       <div className="p-4" style={{ backgroundColor: colors.background }}>
@@ -86,7 +77,6 @@ export function RmiView() {
     );
   }
 
-  // Handle error state
   if (error || !marketData) {
     return (
       <div className="p-4" style={{ backgroundColor: colors.background, color: colors.text }}>
@@ -101,13 +91,12 @@ export function RmiView() {
     );
   }
 
-  // Get all available securities for the selected region
-  // If no security is selected yet, select the first one
-  if (!selectedSecurity && securities.length > 0) {
-    setSelectedSecurity(securities[0].id);
-  }
+  useEffect(() => {
+    if (!selectedSecurity && securities.length > 0) {
+      setSelectedSecurity(securities[0].id);
+    }
+  }, [selectedSecurity, securities, setSelectedSecurity]);
 
-  // Find the selected security and benchmark
   const selectedSecurityData = securities.find((item: MarketItem) => item.id === selectedSecurity);
   const benchmarkData = securities.find((item: MarketItem) => item.id === benchmarkIndex);
 
@@ -282,10 +271,7 @@ export function RmiView() {
           <TabsTrigger
             value="analysis"
             className="flex-1 rounded-none data-[state=active]:bg-[#1e1e1e] data-[state=active]:text-[#ff9900] data-[state=active]:shadow-none px-3 py-1 h-full ring-offset-0"
-            style={{
-              backgroundColor: colors.surface,
-              color: colors.text,
-            }}
+            style={{ backgroundColor: colors.surface, color: colors.text }}
           >
             ANALYSIS
           </TabsTrigger>
@@ -390,7 +376,6 @@ export function RmiView() {
               Historical RMI values comparing {selectedSecurityData?.id} to{" "}
               {benchmarkData?.id ?? "N/A"}
             </p>
-
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b" style={{ borderColor: colors.border }}>
@@ -402,7 +387,6 @@ export function RmiView() {
                 </tr>
               </thead>
               <tbody>
-                {/* Sample data - in a real app, this would come from an API */}
                 {Array.from({ length: 10 }).map((_, i) => {
                   const date = new Date();
                   date.setDate(date.getDate() - i);
@@ -410,8 +394,6 @@ export function RmiView() {
                     month: "short",
                     day: "numeric",
                   });
-
-                  // Generate some sample values
                   const secValue = selectedSecurityData
                     ? (selectedSecurityData.value * (1 - i * 0.005)).toFixed(2)
                     : "0.00";
@@ -426,12 +408,12 @@ export function RmiView() {
                         Number.parseFloat((100 * (1 + (i - 1) * 0.002)).toFixed(2))
                   ).toFixed(2);
                   const isPositive = Number.parseFloat(change) >= 0;
-
-                  // Create a unique key using the date timestamp and index
-                  const uniqueKey = `${date.getTime()}-${selectedSecurity}-${i}`;
-
                   return (
-                    <tr key={uniqueKey} className="border-b" style={{ borderColor: colors.border }}>
+                    <tr
+                      key={`${date.getTime()}-${selectedSecurity}-${i}`}
+                      className="border-b"
+                      style={{ borderColor: colors.border }}
+                    >
                       <td className="py-2">{formattedDate}</td>
                       <td className="py-2 text-right">{secValue}</td>
                       <td className="py-2 text-right">{benchValue}</td>
@@ -466,7 +448,7 @@ export function RmiView() {
             <ul className="list-disc pl-5 text-xs space-y-2">
               <li>
                 Current RMI value is <span className="font-bold">{selectedSecurityData?.rmi}</span>,
-                indicating
+                indicating{" "}
                 {Number.parseFloat(selectedSecurityData?.rmi || "100") > 100
                   ? " outperformance compared to the benchmark."
                   : " underperformance compared to the benchmark."}
@@ -492,10 +474,7 @@ export function RmiView() {
             <div className="h-4 w-full bg-gray-200 rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full"
-                style={{
-                  width: "65%",
-                  backgroundColor: colors.accent,
-                }}
+                style={{ width: "65%", backgroundColor: colors.accent }}
               />
             </div>
             <p className="text-xs mt-1">Correlation: 0.65 (Moderate)</p>
@@ -509,10 +488,10 @@ export function RmiView() {
             </p>
           </div>
 
-          {/* AI Market Analysis */}
           <AiMarketAnalysis
             selectedSecurity={selectedSecurityData}
             benchmarkSecurity={benchmarkData}
+            language={language}
             colors={colors}
           />
         </TabsContent>
@@ -520,3 +499,5 @@ export function RmiView() {
     </div>
   );
 }
+
+export const RmiView = memo(RmiViewInner);

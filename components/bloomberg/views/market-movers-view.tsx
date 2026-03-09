@@ -16,7 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ArrowDown, ArrowLeft, ArrowUp, Filter, RefreshCw } from "lucide-react";
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { BloombergButton } from "../core/bloomberg-button";
 import { bloombergColors } from "../lib/theme-config";
 import { Sparkline } from "../ui/sparkline";
@@ -51,7 +51,7 @@ interface MarketMoversViewProps {
   isLoading: boolean;
 }
 
-export default function MarketMoversView({
+function MarketMoversView({
   isDarkMode,
   onBack,
   marketData,
@@ -344,3 +344,5 @@ export default function MarketMoversView({
     </div>
   );
 }
+
+export default memo(MarketMoversView);

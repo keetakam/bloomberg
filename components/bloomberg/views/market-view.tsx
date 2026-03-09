@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { useMarketDataQuery } from "../hooks";
 import { bloombergColors } from "../lib/theme-config";
 import { MarketTable } from "../ui";
@@ -9,7 +10,7 @@ type MarketViewProps = {
   isDarkMode: boolean;
 };
 
-export function MarketView({ isDarkMode }: MarketViewProps) {
+export const MarketView = memo(function MarketView({ isDarkMode }: MarketViewProps) {
   const { marketData: data, isLoading, error } = useMarketDataQuery();
   const colors = isDarkMode ? bloombergColors.dark : bloombergColors.light;
 
@@ -44,4 +45,4 @@ export function MarketView({ isDarkMode }: MarketViewProps) {
       </div>
     </div>
   );
-}
+});

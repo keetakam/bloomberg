@@ -1,7 +1,7 @@
+import type { MarketItem } from "@/lib/models/market-data.model";
 import { useQueryClient } from "@tanstack/react-query";
 import { atom, useAtom } from "jotai";
 import { useState } from "react";
-import type { MarketItem } from "../types";
 
 // Define Jotai atoms for AI state
 export const aiMarketCommentsAtom = atom<string>("");

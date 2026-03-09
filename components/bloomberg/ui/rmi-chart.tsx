@@ -1,7 +1,7 @@
 "use client";
 
 import { useAtom } from "jotai";
-import { useState } from "react";
+import { memo, useMemo, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -30,16 +30,51 @@ interface RmiDataPoint {
   benchmark?: number;
 }
 
-export function RmiChart({ marketItem, benchmarkItem, width = 600, height = 300 }: RmiChartProps) {
+interface RmiTooltipProps extends TooltipProps<number, string> {
+  colors: { surface: string; border: string; text: string };
+  rmiColor: string;
+  marketId: string;
+  benchmarkId?: string;
+}
+
+const RmiTooltip = memo(function RmiTooltip({
+  active,
+  payload,
+  colors,
+  rmiColor,
+  marketId,
+  benchmarkId,
+}: RmiTooltipProps) {
+  if (!active || !payload?.length) return null;
+  const d = payload[0].payload as RmiDataPoint;
+  return (
+    <div
+      className="p-2 rounded-sm shadow-md"
+      style={{ backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }}
+    >
+      <p className="text-xs font-bold">{d.time}</p>
+      <p className="text-xs" style={{ color: rmiColor }}>
+        RMI: {d.rmi.toFixed(2)}
+      </p>
+      <p className="text-xs">
+        {marketId}: {d.value.toFixed(2)}
+      </p>
+      {benchmarkId && (
+        <p className="text-xs">
+          {benchmarkId}: {d.benchmark?.toFixed(2)}
+        </p>
+      )}
+    </div>
+  );
+});
+
+function RmiChartInner({ marketItem, benchmarkItem, width = 600, height = 300 }: RmiChartProps) {
   const [isDarkMode] = useAtom(isDarkModeAtom);
   const [timeRange] = useAtom(rmiTimeRangeAtom);
   const colors = isDarkMode ? bloombergColors.dark : bloombergColors.light;
   const [hoveredData, setHoveredData] = useState<RmiDataPoint | null>(null);
 
-  // This would fetch historical data based on the timeRange
-  // We'll generate sample data based on the sparkline data
-  const generateRmiData = (): RmiDataPoint[] => {
-    // We use sparkline data if available, otherwise generate sample data
+  const data = useMemo((): RmiDataPoint[] => {
     const marketValues = marketItem.sparkline1 || [
       marketItem.value * 0.95,
       marketItem.value * 0.97,
@@ -51,7 +86,6 @@ export function RmiChart({ marketItem, benchmarkItem, width = 600, height = 300 
 
     const benchmarkValues = benchmarkItem?.sparkline1 || [100, 101, 99, 102, 103, 104];
 
-    // Generate dates for the last N days based on timeRange
     const days = marketValues.length;
     const dates = Array.from({ length: days }, (_, i) => {
       const date = new Date();
@@ -59,61 +93,25 @@ export function RmiChart({ marketItem, benchmarkItem, width = 600, height = 300 
       return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
     });
 
-    // Calculate RMI values (normalized to 100 at the start)
     const baseMarket = marketValues[0];
     const baseBenchmark = benchmarkValues[0];
 
     return marketValues.map((value, i) => {
-      // RMI calculation: (security / base_security) / (benchmark / base_benchmark) * 100
       const normalizedSecurity = value / baseMarket;
       const normalizedBenchmark = benchmarkValues[i] / baseBenchmark;
       const rmi = (normalizedSecurity / normalizedBenchmark) * 100;
-
       return {
         time: dates[i],
-        value: value,
+        value,
         benchmark: benchmarkValues[i],
         rmi: Number.parseFloat(rmi.toFixed(2)),
       };
     });
-  };
-
-  const data = generateRmiData();
+  }, [marketItem.sparkline1, marketItem.value, benchmarkItem?.sparkline1]);
 
   // Determine if RMI is trending up or down
   const rmiTrend = data[data.length - 1].rmi > data[0].rmi;
   const rmiColor = rmiTrend ? colors.positive : colors.negative;
-
-  // Custom tooltip to show both RMI and actual values
-  const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div
-          className="p-2 rounded-sm shadow-md"
-          style={{
-            backgroundColor: colors.surface,
-            borderColor: colors.border,
-            color: colors.text,
-          }}
-        >
-          <p className="text-xs font-bold">{data.time}</p>
-          <p className="text-xs" style={{ color: rmiColor }}>
-            RMI: {data.rmi.toFixed(2)}
-          </p>
-          <p className="text-xs">
-            {marketItem.id}: {data.value.toFixed(2)}
-          </p>
-          {benchmarkItem && (
-            <p className="text-xs">
-              {benchmarkItem.id}: {data.benchmark?.toFixed(2)}
-            </p>
-          )}
-        </div>
-      );
-    }
-    return null;
-  };
 
   return (
     <div
@@ -190,7 +188,16 @@ export function RmiChart({ marketItem, benchmarkItem, width = 600, height = 300 
             axisLine={{ stroke: colors.border }}
             domain={["dataMin - 5", "dataMax + 5"]}
           />
-          <Tooltip content={<CustomTooltip />} />
+          <Tooltip
+            content={
+              <RmiTooltip
+                colors={colors}
+                rmiColor={rmiColor}
+                marketId={marketItem.id}
+                benchmarkId={benchmarkItem?.id}
+              />
+            }
+          />
           <Area
             type="monotone"
             dataKey="rmi"
@@ -208,3 +215,5 @@ export function RmiChart({ marketItem, benchmarkItem, width = 600, height = 300 
     </div>
   );
 }
+
+export const RmiChart = memo(RmiChartInner);

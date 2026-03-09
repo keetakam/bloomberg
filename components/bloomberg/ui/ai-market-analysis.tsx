@@ -6,11 +6,13 @@ import { useChat } from "@ai-sdk/react";
 import { RefreshCw, Send, X } from "lucide-react";
 import { useState } from "react";
 import { BloombergButton } from "../core/bloomberg-button";
+import { type Language, translations } from "../lib/translations";
 import type { MarketItem } from "../types";
 
 interface AiMarketAnalysisProps {
   selectedSecurity?: MarketItem;
   benchmarkSecurity?: MarketItem;
+  language?: Language;
   colors: {
     background: string;
     surface: string;
@@ -25,8 +27,10 @@ interface AiMarketAnalysisProps {
 export function AiMarketAnalysis({
   selectedSecurity,
   benchmarkSecurity,
+  language = "th",
   colors,
 }: AiMarketAnalysisProps) {
+  const t = translations[language];
   const [commentaryMode, setCommentaryMode] = useState<boolean>(true);
 
   // Use the AI SDK's useChat hook for streaming responses
@@ -64,7 +68,7 @@ export function AiMarketAnalysis({
       {
         id: "user-1",
         role: "user",
-        content: `Provide a brief market commentary on ${selectedSecurity?.id} compared to ${benchmarkSecurity?.id}.`,
+        content: t.aiCommentaryPrompt(selectedSecurity?.id ?? "", benchmarkSecurity?.id ?? ""),
       },
     ]);
   };
@@ -79,7 +83,7 @@ export function AiMarketAnalysis({
       style={{ borderColor: colors.border, backgroundColor: colors.surface }}
     >
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-sm font-bold">AI Market Analysis</h3>
+        <h3 className="text-sm font-bold">{t.aiTitle}</h3>
         <div className="flex gap-2">
           <BloombergButton
             color="accent"
@@ -88,7 +92,7 @@ export function AiMarketAnalysis({
             className="flex items-center gap-1 text-xs"
           >
             <RefreshCw className="h-3 w-3" />
-            REFRESH
+            {t.refresh}
           </BloombergButton>
           {messages.length > 0 && (
             <BloombergButton
@@ -98,7 +102,7 @@ export function AiMarketAnalysis({
               className="flex items-center gap-1 text-xs"
             >
               <X className="h-3 w-3" />
-              CLEAR
+              {t.clear}
             </BloombergButton>
           )}
         </div>
@@ -123,20 +127,19 @@ export function AiMarketAnalysis({
           <p className="text-xs whitespace-pre-line">{messages[messages.length - 1].content}</p>
         ) : (
           <p className="text-xs text-gray-500">
-            Click REFRESH to generate AI commentary on {selectedSecurity?.id} compared to{" "}
-            {benchmarkSecurity?.id}.
+            {t.aiClickRefresh(selectedSecurity?.id ?? "", benchmarkSecurity?.id ?? "")}
           </p>
         )}
       </div>
 
       {/* Question and Answer Section */}
       <div className="mb-4">
-        <h4 className="text-xs font-bold mb-2">Ask a Question</h4>
+        <h4 className="text-xs font-bold mb-2">{t.askQuestion}</h4>
         <form onSubmit={handleSubmit} className="flex gap-2">
           <Input
             value={input}
             onChange={handleInputChange}
-            placeholder="Ask about market trends, correlations, etc."
+            placeholder={t.askPlaceholder}
             className="flex-1 h-8 text-xs font-mono rounded-none border focus:ring-0 focus:ring-offset-0"
             style={{
               backgroundColor: colors.background,
@@ -152,7 +155,7 @@ export function AiMarketAnalysis({
             className="flex items-center gap-1 text-xs"
           >
             <Send className="h-3 w-3" />
-            ASK
+            {t.ask}
           </BloombergButton>
         </form>
       </div>

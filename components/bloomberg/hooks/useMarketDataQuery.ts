@@ -1,9 +1,10 @@
 "use client";
 
+import type { MarketData, MarketItem } from "@/lib/models/market-data.model";
 import { useQuery } from "@tanstack/react-query";
 import { useAtom } from "jotai";
 import { useCallback, useEffect, useRef } from "react";
-import { fetchMarketData, simulateMarketUpdate } from "../api/market-data";
+import { fetchMarketData } from "../api/market-data";
 import {
   dataSourceAtom,
   isFromRedisAtom,
@@ -12,7 +13,6 @@ import {
   updatedCellsAtom,
   updatedSparklinesAtom,
 } from "../atoms";
-import type { MarketData, MarketItem } from "../types";
 
 // Query keys
 export const MARKET_DATA_KEY = "marketData";
@@ -43,7 +43,7 @@ export function useMarketDataQuery() {
     queryKey: [MARKET_DATA_KEY],
     queryFn: fetchMarketData,
     // Configure polling based on isRealTimeEnabled
-    refetchInterval: isRealTimeEnabled ? 30000 : 300000, // 30 seconds in real-time mode, 5 minutes otherwise
+    refetchInterval: isRealTimeEnabled ? 60000 : 300000, // 30 seconds in real-time mode, 5 minutes otherwise
     staleTime: 10000, // 10 seconds
     refetchOnWindowFocus: false,
     gcTime: 3600000, // 1 hour
@@ -91,8 +91,15 @@ export function useMarketDataQuery() {
             }
           }
 
-          // Check if sparkline data has changed
-          if (JSON.stringify(oldItem.sparkline1) !== JSON.stringify(newItem.sparkline1)) {
+          // Check if sparkline data has changed (shallow compare)
+          const oldSpark = oldItem.sparkline1;
+          const newSpark = newItem.sparkline1;
+          const sparkChanged =
+            oldSpark !== newSpark &&
+            (oldSpark?.length !== newSpark?.length ||
+              oldSpark?.[0] !== newSpark?.[0] ||
+              oldSpark?.[oldSpark.length - 1] !== newSpark?.[newSpark.length - 1]);
+          if (sparkChanged) {
             newUpdatedSparklines[`${region}-${newItem.id}`] = true;
           }
         }

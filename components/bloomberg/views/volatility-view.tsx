@@ -11,7 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ArrowDown, ArrowLeft, ArrowUp, RefreshCw, TrendingDown, TrendingUp } from "lucide-react";
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { BloombergButton } from "../core/bloomberg-button";
 import { bloombergColors } from "../lib/theme-config";
 import { Sparkline } from "../ui/sparkline";
@@ -62,7 +62,7 @@ interface VolatilityViewProps {
   isLoading: boolean;
 }
 
-export default function VolatilityView({
+function VolatilityView({
   isDarkMode,
   onBack,
   marketData,
@@ -537,3 +537,5 @@ export default function VolatilityView({
     </div>
   );
 }
+
+export default memo(VolatilityView);

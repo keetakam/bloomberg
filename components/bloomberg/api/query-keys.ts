@@ -13,8 +13,13 @@ export const queryKeys = {
   },
   news: {
     all: ["news"] as const,
-    list: () => [...queryKeys.news.all, "list"] as const,
-    detail: (id: string) => [...queryKeys.news.all, { id }] as const,
+    sources: () => [...queryKeys.news.all, "sources"] as const,
+    byTicker: (ticker: string, source?: string, sentiment?: string) =>
+      [
+        ...queryKeys.news.all,
+        "byTicker",
+        { ticker, source: source ?? "all", sentiment: sentiment ?? "all" },
+      ] as const,
   },
   marketMovers: {
     all: ["marketMovers"] as const,

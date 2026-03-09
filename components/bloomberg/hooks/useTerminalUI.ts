@@ -1,9 +1,16 @@
 import { useAtom } from "jotai";
 import { useCallback } from "react";
-import { currentViewAtom, errorAtom, isDarkModeAtom, isShortcutsHelpOpenAtom } from "../atoms";
+import {
+  currentViewAtom,
+  errorAtom,
+  isDarkModeAtom,
+  isShortcutsHelpOpenAtom,
+  languageAtom,
+} from "../atoms";
 
 export function useTerminalUI() {
   const [isDarkMode, setIsDarkMode] = useAtom(isDarkModeAtom);
+  const [language, setLanguage] = useAtom(languageAtom);
   const [error, setError] = useAtom(errorAtom);
   const [isShortcutsHelpOpen, setIsShortcutsHelpOpen] = useAtom(isShortcutsHelpOpenAtom);
   const [currentView, setCurrentView] = useAtom(currentViewAtom);
@@ -12,6 +19,11 @@ export function useTerminalUI() {
   const handleThemeToggle = useCallback(() => {
     setIsDarkMode(!isDarkMode);
   }, [isDarkMode, setIsDarkMode]);
+
+  // Language toggle handler
+  const handleLanguageToggle = useCallback(() => {
+    setLanguage((l) => (l === "en" ? "th" : "en"));
+  }, [setLanguage]);
 
   // View handlers
   const handleMarketView = useCallback(() => {
@@ -61,6 +73,7 @@ export function useTerminalUI() {
   return {
     // State
     isDarkMode,
+    language,
     error,
     isShortcutsHelpOpen,
     currentView,
@@ -73,6 +86,7 @@ export function useTerminalUI() {
 
     // Handlers
     handleThemeToggle,
+    handleLanguageToggle,
     handleMarketView,
     handleNewsView,
     handleMoversView,

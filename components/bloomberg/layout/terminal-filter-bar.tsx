@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAtom } from "jotai";
 import { ChevronDown } from "lucide-react";
+import { useEffect, useState } from "react";
 import {
   show10DAtom,
   showAvatAtom,
@@ -22,15 +23,18 @@ import {
 import { activeWatchlistAtom } from "../atoms/terminal-ui";
 import { BloombergButton } from "../core/bloomberg-button";
 import { bloombergColors } from "../lib/theme-config";
+import { type Language, translations } from "../lib/translations";
 import type { FilterState } from "../types";
 
 type TerminalFilterBarProps = {
   isDarkMode: boolean;
+  language: Language;
   watchlists: Array<{ name: string; indices: string[] }>;
 };
 
-export function TerminalFilterBar({ isDarkMode, watchlists }: TerminalFilterBarProps) {
+export function TerminalFilterBar({ isDarkMode, language, watchlists }: TerminalFilterBarProps) {
   const colors = isDarkMode ? bloombergColors.dark : bloombergColors.light;
+  const t = translations[language];
 
   // Use Jotai atoms directly for state management
   const [showMovers, setShowMovers] = useAtom(showMoversAtom);
@@ -42,6 +46,10 @@ export function TerminalFilterBar({ isDarkMode, watchlists }: TerminalFilterBarP
   const [showYTD, setShowYTD] = useAtom(showYTDAtom);
   const [showCAD, setShowCAD] = useAtom(showCADAtom);
   const [activeWatchlist, setActiveWatchlist] = useAtom(activeWatchlistAtom);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return <div className="h-8" />;
 
   return (
     <div
@@ -49,7 +57,9 @@ export function TerminalFilterBar({ isDarkMode, watchlists }: TerminalFilterBarP
     >
       <DropdownMenu>
         <DropdownMenuTrigger className="flex items-center gap-1">
-          <span className="font-bold">{activeWatchlist ? activeWatchlist : "Standard"}</span>
+          <span className="font-bold" suppressHydrationWarning>
+            {activeWatchlist ? activeWatchlist : "Standard"}
+          </span>
           <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4" />
         </DropdownMenuTrigger>
         <DropdownMenuContent className="font-mono text-xs">
@@ -69,7 +79,7 @@ export function TerminalFilterBar({ isDarkMode, watchlists }: TerminalFilterBarP
           onCheckedChange={(checked) => setShowMovers(!!checked)}
           className="h-3 w-3 rounded-none border-gray-500 data-[state=checked]:bg-gray-500"
         />
-        <label htmlFor="movers">Movers</label>
+        <label htmlFor="movers">{t.movers}</label>
       </div>
 
       <div className="flex items-center gap-1">
@@ -79,7 +89,7 @@ export function TerminalFilterBar({ isDarkMode, watchlists }: TerminalFilterBarP
           onCheckedChange={(checked) => setShowVolatility(!!checked)}
           className="h-3 w-3 rounded-none border-gray-500 data-[state=checked]:bg-gray-500"
         />
-        <label htmlFor="volatility">Volatility</label>
+        <label htmlFor="volatility">{t.volatility}</label>
       </div>
 
       <div className="flex items-center gap-1">
@@ -89,7 +99,7 @@ export function TerminalFilterBar({ isDarkMode, watchlists }: TerminalFilterBarP
           onCheckedChange={(checked) => setShowRatios(!!checked)}
           className="h-3 w-3 rounded-none border-gray-500 data-[state=checked]:bg-gray-500"
         />
-        <label htmlFor="ratios">Ratios</label>
+        <label htmlFor="ratios">{t.ratios}</label>
       </div>
 
       <div className="flex items-center gap-1">
@@ -99,7 +109,7 @@ export function TerminalFilterBar({ isDarkMode, watchlists }: TerminalFilterBarP
           onCheckedChange={(checked) => setShowFutures(!!checked)}
           className="h-3 w-3 rounded-none border-gray-500 data-[state=checked]:bg-gray-500"
         />
-        <label htmlFor="futures">Futures</label>
+        <label htmlFor="futures">{t.futures}</label>
       </div>
 
       <div className="flex items-center gap-1">
@@ -128,13 +138,13 @@ export function TerminalFilterBar({ isDarkMode, watchlists }: TerminalFilterBarP
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <BloombergButton color={showYTD ? "green" : "red"} className="flex items-center gap-1">
-            <span>%Chg {showYTD ? "YTD" : "Daily"}</span>
+            <span>{showYTD ? t.ytd : t.daily}</span>
             <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4" />
           </BloombergButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="font-mono text-xs">
-          <DropdownMenuItem onClick={() => setShowYTD(false)}>Daily Change</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setShowYTD(true)}>%Chg YTD</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setShowYTD(false)}>{t.daily}</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setShowYTD(true)}>{t.ytd}</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 

@@ -1,5 +1,6 @@
 "use client";
 
+import type { MarketData, MarketItem } from "@/lib/models/market-data.model";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAtom } from "jotai";
 import { useCallback, useEffect, useMemo, useRef } from "react";
@@ -20,7 +21,6 @@ import {
   updatedCellsAtom,
   updatedSparklinesAtom,
 } from "../atoms";
-import type { MarketData, MarketItem } from "../types";
 
 /**
  * Hook for fetching all market data
@@ -37,7 +37,7 @@ export function useAllMarketData() {
   const marketDataQuery = useQuery({
     queryKey: queryKeys.marketData.list(),
     queryFn: fetchAllMarketData,
-    refetchInterval: isRealTimeEnabled ? 30000 : 300000, // 30 seconds in real-time mode, 5 minutes otherwise
+    refetchInterval: isRealTimeEnabled ? 60000 : 300000, // 30 seconds in real-time mode, 5 minutes otherwise
     staleTime: 10000, // 10 seconds
     refetchOnWindowFocus: false,
     gcTime: 3600000, // 1 hour
@@ -124,7 +124,7 @@ export function useRegionMarketData(regions: string[] = ["americas", "emea", "as
     queries: regions.map((region) => ({
       queryKey: queryKeys.marketData.region(region),
       queryFn: () => fetchRegionMarketData(region),
-      refetchInterval: isRealTimeEnabled ? 30000 : 300000,
+      refetchInterval: isRealTimeEnabled ? 60000 : 300000,
       staleTime: 10000,
       refetchOnWindowFocus: false,
       gcTime: 3600000,
@@ -179,7 +179,7 @@ export function useMarketMovers() {
   const marketDataQuery = useQuery({
     queryKey: queryKeys.marketMovers.list(),
     queryFn: fetchMarketMovers,
-    refetchInterval: isRealTimeEnabled ? 30000 : 300000,
+    refetchInterval: isRealTimeEnabled ? 60000 : 300000,
     staleTime: 10000,
     refetchOnWindowFocus: false,
     gcTime: 3600000,
@@ -198,7 +198,7 @@ export function useVolatileMarkets() {
   const volatilityQuery = useQuery({
     queryKey: queryKeys.volatility.list(),
     queryFn: fetchVolatileMarkets,
-    refetchInterval: isRealTimeEnabled ? 30000 : 300000,
+    refetchInterval: isRealTimeEnabled ? 60000 : 300000,
     staleTime: 10000,
     refetchOnWindowFocus: false,
     gcTime: 3600000,
@@ -216,7 +216,7 @@ export function useMarketItem(id: string) {
   const itemQuery = useQuery({
     queryKey: queryKeys.marketData.detail(id),
     queryFn: () => fetchMarketItemById(id),
-    refetchInterval: isRealTimeEnabled ? 30000 : 300000,
+    refetchInterval: isRealTimeEnabled ? 60000 : 300000,
     staleTime: 10000,
     refetchOnWindowFocus: false,
     gcTime: 3600000,
