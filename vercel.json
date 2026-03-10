@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/update-sectors",
+      "schedule": "0 21 * * 0-4"
+    }
+  ]
+}

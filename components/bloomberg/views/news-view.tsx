@@ -1,13 +1,14 @@
 "use client";
 
 import type { ForexImpact } from "@/lib/models/forex-factory.model";
-import type { NewsSentiment, NewsSource } from "@/lib/models/news.model";
+import type { NewsSentiment } from "@/lib/models/news.model";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ExternalLink, RefreshCw } from "lucide-react";
 import { memo, useMemo, useRef, useState } from "react";
 import { queryKeys } from "../api/query-keys";
 import { BloombergButton } from "../core/bloomberg-button";
 import { useForexFactory } from "../hooks/useForexFactory";
+import { useNasdaqSectors, useNasdaqTickers } from "../hooks/useNasdaqSectors";
 import { useNewsData, useNewsSources } from "../hooks/useNewsData";
 import { useNewsDigest } from "../hooks/useNewsDigest";
 import { useNewsTranslation } from "../hooks/useNewsTranslation";
@@ -126,7 +127,11 @@ function NewsView({ isDarkMode, onBack, language = "th" }: NewsViewProps) {
   const [sentiment, setSentiment] = useState<string>("all");
   const [translateEnabled, setTranslateEnabled] = useState(false);
   const [forexImpact, setForexImpact] = useState("high");
+  const [selectedSector, setSelectedSector] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const { data: sectorsData } = useNasdaqSectors();
+  const { data: sectorTickers } = useNasdaqTickers(selectedSector || null);
 
   const isForexFactory = source === "forexfactory";
 
@@ -218,6 +223,50 @@ function NewsView({ isDarkMode, onBack, language = "th" }: NewsViewProps) {
             </option>
           ))}
         </select>
+
+        {!isForexFactory && sectorsData && (
+          <>
+            <select
+              value={selectedSector}
+              onChange={(e) => setSelectedSector(e.target.value)}
+              className="px-1 py-0.5 border rounded-none bg-transparent focus:outline-none"
+              style={{ borderColor: colors.border, color: colors.text, background: colors.surface }}
+            >
+              <option value="">Sector</option>
+              {sectorsData.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+
+            {selectedSector && sectorTickers && sectorTickers.length > 0 && (
+              <select
+                value=""
+                onChange={(e) => {
+                  if (!e.target.value) return;
+                  setTickerInput(e.target.value);
+                  setTicker(e.target.value);
+                }}
+                className="px-1 py-0.5 border rounded-none bg-transparent focus:outline-none max-w-[140px]"
+                style={{
+                  borderColor: colors.border,
+                  color: colors.text,
+                  background: colors.surface,
+                }}
+              >
+                <option value="">Pick ticker</option>
+                {[...sectorTickers]
+                  .sort((a, b) => a.symbol.localeCompare(b.symbol))
+                  .map((t) => (
+                    <option key={t.symbol} value={t.symbol}>
+                      {t.symbol} – {t.name}
+                    </option>
+                  ))}
+              </select>
+            )}
+          </>
+        )}
 
         {!isForexFactory && (
           <BloombergButton color="accent" onClick={handleSearch} disabled={isLoading}>

@@ -6,6 +6,9 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  outputFileTracingIncludes: {
+    "/api/sectors": ["./ext/*.csv"],
+  },
 };
 
 export default nextConfig;
